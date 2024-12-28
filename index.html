@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سؤال وجواب</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(-45deg, #4facfe, #00f2fe, #43e97b, #f8ffae);
+            background-size: 400% 400%;
+            animation: gradientBG 10s ease infinite;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        .container {
+            text-align: center;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            z-index: 2;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #444;
+        }
+        button {
+            background-color: #4facfe;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #00c2fe;
+        }
+        .question {
+            margin: 20px 0;
+            font-size: 18px;
+            color: #555;
+        }
+        input {
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .feedback {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        .score {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+        .effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .effect .circle, .effect .flower {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            position: absolute;
+            animation: burst 1s ease-out forwards;
+        }
+        .effect .flower {
+            background: url('flower.png') no-repeat center center;
+            background-size: contain;
+        }
+        @keyframes burst {
+            from {
+                transform: scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: scale(5);
+                opacity: 0;
+            }
+        }
+        .red-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.8);
+            z-index: 10;
+            animation: signal 0.5s alternate infinite;
+            display: none;
+        }
+        @keyframes signal {
+            from {
+                opacity: 0.8;
+            }
+            to {
+                opacity: 0.2;
+            }
+        }
+        footer {
+            position: absolute;
+            bottom: 10px;
+            text-align: center;
+            width: 100%;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="title">سؤال وجواب</h1>
+        <div>
+            <button onclick="changeLanguage('ar')">العربية</button>
+            <button onclick="changeLanguage('en')">English</button>
+            <button onclick="changeLanguage('fr')">Français</button>
+        </div>
+        <button id="startBtn">العب الآن</button>
+        <div id="quiz" style="display: none;">
+            <p class="question" id="question"></p>
+            <input type="text" id="answerInput" placeholder="اكتب إجابتك هنا">
+            <button id="submitBtn">إرسال</button>
+            <p class="feedback" id="feedback"></p>
+            <div class="score">
+                <p id="correctText">الإجابات الصحيحة: <span id="correctScore">0</span></p>
+                <p id="wrongText">الإجابات الخاطئة: <span id="wrongScore">0</span></p>
+            </div>
+        </div>
+        <div class="effect" id="effect"></div>
+        <div class="red-overlay" id="redOverlay"></div>
+    </div>
+
+    <footer>
+        جميع الحقوق محفوظة © صهيب بوقنور 2025
+    </footer>
+
+    <script>
+        const translations = {
+            ar: {
+                title: "سؤال وجواب",
+                start: "العب الآن",
+                correct: "الإجابات الصحيحة: ",
+                wrong: "الإجابات الخاطئة: ",
+                placeholder: "اكتب إجابتك هنا",
+                feedbackCorrect: "أحسنت!",
+                feedbackWrong: "أخطأت! الإجابة الصحيحة هي: "
+            },
+            en: {
+                title: "Question and Answer",
+                start: "Play Now",
+                correct: "Correct Answers: ",
+                wrong: "Wrong Answers: ",
+                placeholder: "Type your answer here",
+                feedbackCorrect: "Well done!",
+                feedbackWrong: "Wrong! The correct answer is: "
+            },
+            fr: {
+                title: "Question et Réponse",
+                start: "Jouer Maintenant",
+                correct: "Réponses Correctes: ",
+                wrong: "Réponses Incorrectes: ",
+                placeholder: "Tapez votre réponse ici",
+                feedbackCorrect: "Bien joué!",
+                feedbackWrong: "Faux! La réponse correcte est: "
+            }
+        };
+
+        let currentLanguage = 'ar';
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            document.getElementById('title').textContent = translations[lang].title;
+            document.getElementById('startBtn').textContent = translations[lang].start;
+            document.getElementById('answerInput').placeholder = translations[lang].placeholder;
+            document.getElementById('correctText').textContent = translations[lang].correct;
+            document.getElementById('wrongText').textContent = translations[lang].wrong;
+        }
+
+        const questions = {
+            ar: [
+                { question: "ما هي عاصمة فرنسا؟", answer: "باريس" },
+                { question: "ما هي القارة التي تقع فيها مصر؟", answer: "إفريقيا" }
+            ],
+            en: [
+                { question: "What is the capital of France?", answer: "Paris" },
+                { question: "Which continent is Egypt located in?", answer: "Africa" }
+            ],
+            fr: [
+                { question: "Quelle est la capitale de la France?", answer: "Paris" },
+                { question: "Sur quel continent se trouve l'Égypte?", answer: "Afrique" }
+            ]
+        };
+
+        let currentQuestionIndex = 0;
+        let correctScore = 0;
+        let wrongScore = 0;
+
+        const startBtn = document.getElementById('startBtn');
+        const quizDiv = document.getElementById('quiz');
+        const questionElement = document.getElementById('question');
+        const answerInput = document.getElementById('answerInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const feedbackElement = document.getElementById('feedback');
+        const correctScoreElement = document.getElementById('correctScore');
+        const wrongScoreElement = document.getElementById('wrongScore');
+        const effectDiv = document.getElementById('effect');
+        const redOverlay = document.getElementById('redOverlay');
+
+        startBtn.addEventListener('click', () => {
+            startBtn.style.display = 'none';
+            quizDiv.style.display = 'block';
+            loadQuestion();
+        });
+
+        submitBtn.addEventListener('click', () => {
+            const userAnswer = answerInput.value.trim();
+            const currentQuestions = questions[currentLanguage];
+            if (userAnswer === currentQuestions[currentQuestionIndex].answer) {
+                feedbackElement.textContent = translations[currentLanguage].feedbackCorrect;
+                feedbackElement.style.color = "green";
+                correctScore++;
+                correctScoreElement.textContent = correctScore;
+                showEffect('circle');
+            } else {
+                feedbackElement.textContent = translations[currentLanguage].feedbackWrong + currentQuestions[currentQuestionIndex].answer;
+                feedbackElement.style.color = "red";
+                wrongScore++;
+                wrongScoreElement.textContent = wrongScore;
+                showRedOverlay();
+            }
+
+            currentQuestionIndex = (currentQuestionIndex + 1) % currentQuestions.length;
+            setTimeout(() => {
+                feedbackElement.textContent = "";
+                answerInput.value = "";
+                loadQuestion();
+            }, 3000);
+        });
+
+        function loadQuestion() {
+            const currentQuestions = questions[currentLanguage];
+            questionElement.textContent = currentQuestions[currentQuestionIndex].question;
+        }
+
+        function showEffect(type) {
+            effectDiv.innerHTML = '';
+            for (let i = 0; i < 20; i++) {
+                const element = document.createElement('div');
+                element.className = type;
+                element.style.background = getRandomColor();
+                element.style.top = Math.random() * window.innerHeight + 'px';
+                element.style.left = Math.random() * window.innerWidth + 'px';
+                effectDiv.appendChild(element);
+            }
+            effectDiv.style.display = 'block';
+            setTimeout(() => {
+                effectDiv.style.display = 'none';
+            }, 1000);
+        }
+
+        function showRedOverlay() {
+            redOverlay.style.display = 'block';
+            setTimeout(() => {
+                redOverlay.style.display = 'none';
+            }, 1000);
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+    </script>
+</body>
+</html>
